@@ -1,0 +1,137 @@
+[package]
+name = "iso2x-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[workspace]
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1", features = ["derive"] }
+
+[dependencies.iso2x]
+path = ".."
+features = ["arbitrary"]
+
+[[bin]]
+name = "xbe_header"
+path = "fuzz_targets/xbe_header.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "hash_list"
+path = "fuzz_targets/hash_list.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "xex_header"
+path = "fuzz_targets/xex_header.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "dxt1_decode"
+path = "fuzz_targets/dxt1_decode.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "xpr_decode"
+path = "fuzz_targets/xpr_decode.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "xdbf_resource"
+path = "fuzz_targets/xdbf_resource.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "zar_tree"
+path = "fuzz_targets/zar_tree.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "stfs_paths"
+path = "fuzz_targets/stfs_paths.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "texture_decode"
+path = "fuzz_targets/texture_decode.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "xiso_probe_root_offset"
+path = "fuzz_targets/xiso_probe_root_offset.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "xiso_tree"
+path = "fuzz_targets/xiso_tree.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "cci_header"
+path = "fuzz_targets/cci_header.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "ciso_header"
+path = "fuzz_targets/ciso_header.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "stfs_header"
+path = "fuzz_targets/stfs_header.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "cci_header_roundtrip"
+path = "fuzz_targets/cci_header_roundtrip.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "zar_footer_roundtrip"
+path = "fuzz_targets/zar_footer_roundtrip.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "stfs_metadata_roundtrip"
+path = "fuzz_targets/stfs_metadata_roundtrip.rs"
+test = false
+doc = false
+bench = false

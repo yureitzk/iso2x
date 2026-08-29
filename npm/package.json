@@ -1,0 +1,48 @@
+{
+  "name": "iso2x",
+  "type": "module",
+  "license": "MIT",
+  "version": "0.1.2",
+  "description": "WebAssembly Xbox disc image converter",
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "xbox 360",
+    "games on demand",
+    "wasm"
+  ],
+  "author": "yureitzk",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yureitzk/iso2x.git"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "browser": "./dist/index.js",
+      "import": "./dist/index.js"
+    },
+    "./detect-advanced": {
+      "types": "./dist/detect-advanced.d.ts",
+      "browser": "./dist/detect-advanced.js",
+      "import": "./dist/detect-advanced.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "type-check": "tsc --noEmit && tsc --noEmit -p test/tsconfig.json",
+    "test": "vitest run",
+    "test:node": "vitest run --project node",
+    "test:browser": "vitest run --project browser",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "@vitest/browser-playwright": "^4.1.11",
+    "playwright": "^1.62.1",
+    "prettier": "^3.9.6",
+    "typescript": "^5.2.0",
+    "vitest": "^4.1.9"
+  }
+}

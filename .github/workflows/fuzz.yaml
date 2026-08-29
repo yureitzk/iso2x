@@ -1,0 +1,88 @@
+name: Fuzz
+
+# Actual coverage-guided fuzzing runs, on a schedule rather than per-PR since
+# libFuzzer runs are open-ended. ci.yaml's `build-fuzzers` job covers the
+# fast per-PR compile check.
+on:
+  schedule:
+    - cron: "0 4 * * 1" # weekly, Mondays 04:00 UTC
+  workflow_dispatch:
+    inputs:
+      run_seconds:
+        description: "Seconds to fuzz each target for"
+        default: "300"
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false # one target crashing shouldn't cancel the others
+      matrix:
+        target:
+          - xbe_header
+          - xex_header
+          - dxt1_decode
+          - xpr_decode
+          - xdbf_resource
+          - zar_tree
+          - stfs_paths
+          - texture_decode
+          - xiso_probe_root_offset
+          - xiso_tree
+          - cci_header
+          - ciso_header
+          - stfs_header
+          - hash_list
+          - cci_header_roundtrip
+          - zar_footer_roundtrip
+          - stfs_metadata_roundtrip
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install nightly Rust toolchain
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Cache cargo registry and build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: crate/fuzz -> target
+          shared-key: fuzz-build-${{ matrix.target }}
+
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --vers '^0.13' --locked
+
+      - name: Restore corpus
+        uses: actions/cache/restore@v4
+        with:
+          path: crate/fuzz/corpus/${{ matrix.target }}
+          key: fuzz-corpus-${{ matrix.target }}-${{ github.run_id }}
+          restore-keys: |
+            fuzz-corpus-${{ matrix.target }}-
+
+      - name: Run cargo fuzz
+        working-directory: crate
+        run: |
+          mkdir -p fuzz/corpus/${{ matrix.target }}
+          cargo fuzz run ${{ matrix.target }} -- \
+            -max_total_time=${{ github.event.inputs.run_seconds || '300' }} \
+            -print_final_stats=1
+
+      - name: Save corpus
+        if: always() # keep inputs found even if this run crashed
+        uses: actions/cache/save@v4
+        with:
+          path: crate/fuzz/corpus/${{ matrix.target }}
+          key: fuzz-corpus-${{ matrix.target }}-${{ github.run_id }}
+
+      - name: Upload crash artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-crash-${{ matrix.target }}
+          path: |
+            crate/fuzz/artifacts/${{ matrix.target }}
+          if-no-files-found: ignore
+          retention-days: 30

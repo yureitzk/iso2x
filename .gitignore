@@ -1,0 +1,15 @@
+.idea
+.vscode
+.DS_Store
+target/
+node_modules/
+/npm/dist/
+/npm/src/wasm/
+
+/crate/fuzz/artifacts/
+/crate/fuzz/coverage/
+ 
+/crate/fuzz/corpus/*
+!/crate/fuzz/corpus/*/
+/crate/fuzz/corpus/*/*
+!/crate/fuzz/corpus/*/seed-*

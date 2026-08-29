@@ -1,0 +1,65 @@
+[package]
+name = "iso2x"
+version = "0.1.2"
+edition = "2024"
+rust-version.workspace = true
+description = "WebAssembly Xbox disc image converter"
+license = "MIT"
+authors = ["Yurei TZK me@yureitzk.com"]
+repository = "https://github.com/yureitzk/iso2x"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dev-dependencies]
+wasm-bindgen-test = "=0.3.76"
+
+[dependencies]
+wasm-bindgen = "=0.2.126"
+js-sys = "=0.3.103"
+anyhow = "1.0"
+console_error_panic_hook = { version = "0.1", optional = true }
+
+xdvdfs = { git = "https://github.com/antangelo/xdvdfs", rev = "188aa74", default-features = false, features = ["sync", "read", "write"] }
+
+ciso = { version = "0.3.0", default-features = false }
+arbitrary-int = "1.2.6"
+
+encoding_rs = "0.8"
+
+lz4_flex = { version = "0.11.1", default-features = false, features = ["frame"] }
+
+serde = { version = "1", features = ["derive"] }
+serde-wasm-bindgen = "0.6.5"
+enum_dispatch = "0.3"
+tsify = { git = "https://github.com/madonoharu/tsify", rev = "d89d5c1", default-features = false, features = ["js"] }
+serde_bytes = "0.11"
+
+ruzstd = "0.8.3"
+
+sha2 = "0.10"
+sha1 = "0.10.6"
+rsa = { version = "0.9", default-features = false, features = ["sha1", "std"] }
+aes = "0.8.3"
+cbc = "0.1.2"
+cipher = "0.4.4"
+getrandom = { version = "0.2", features = ["js"] }
+rand = "0.8"
+hmac = "0.12"
+
+byteorder = "1.5.0"
+bitflags = "2.9.0"
+num_enum = "0.7.3"
+binrw = "0.15"
+
+png = { version = "0.17", default-features = false }
+lzxd = "0.2.7"
+
+arbitrary = { version = "1", features = ["derive"], optional = true }
+
+[features]
+default = ["console_error_panic_hook"]
+arbitrary = ["dep:arbitrary"]
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(fuzzing)"] }

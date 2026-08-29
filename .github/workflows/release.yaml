@@ -1,0 +1,120 @@
+name: Publish to npm
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - npm/package.json
+
+permissions:
+  contents: write
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      should-publish: ${{ steps.check.outputs.should-publish }}
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare package.json version to published npm version
+        id: check
+        run: |
+          LOCAL_VERSION=$(node -p "require('./npm/package.json').version")
+          PACKAGE_NAME=$(node -p "require('./npm/package.json').name")
+          PUBLISHED_VERSION=$(npm view "$PACKAGE_NAME" version 2>/dev/null || echo "none")
+          echo "local version:     $LOCAL_VERSION"
+          echo "published version: $PUBLISHED_VERSION"
+          if [ "$LOCAL_VERSION" != "$PUBLISHED_VERSION" ]; then
+            echo "should-publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should-publish=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "version=$LOCAL_VERSION" >> "$GITHUB_OUTPUT"
+
+  build-and-publish:
+    needs: check-version
+    if: needs.check-version.outputs.should-publish == 'true'
+    runs-on: ubuntu-latest
+    environment: npm-publish
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache cargo registry and build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: crate -> ../target
+
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@v1.22.0
+
+      - name: Install wasm-bindgen-cli (version-matched to Cargo.lock)
+        run: |
+          WASM_BINDGEN_VERSION=$(cargo pkgid --manifest-path crate/Cargo.toml wasm-bindgen | sed 's/.*@//')
+          cargo binstall wasm-bindgen-cli --version "$WASM_BINDGEN_VERSION" --no-confirm
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Ensure npm CLI supports trusted publishing (>=11.5.1)
+        run: npm install -g npm@latest
+
+      - name: Install wasm-opt (binaryen)
+        run: npm install -g binaryen@130.0.0
+
+      - name: Install npm dependencies (lockfile-exact)
+        working-directory: npm
+        run: npm ci
+
+      - name: Cache Playwright browser
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('npm/package-lock.json') }}
+
+      - name: Install Playwright browser + OS deps (Chromium)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        working-directory: npm
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright OS deps only (browser restored from cache)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        working-directory: npm
+        run: npx playwright install-deps chromium
+
+      - name: Build (cargo + wasm-bindgen + wasm-opt + tsc)
+        run: ./build.sh
+
+      - name: Run tests
+        working-directory: npm
+        run: npm test
+
+      - name: Type check
+        working-directory: npm
+        run: npm run type-check
+
+      - name: Copy README into npm package
+        run: cp README.md npm/README.md
+
+      - name: Publish to npm
+        working-directory: npm
+        run: npm publish --access public
+
+      - name: Tag release
+        run: |
+          VERSION=${{ needs.check-version.outputs.version }}
+          git tag "v$VERSION"
+          git push origin "v$VERSION"
